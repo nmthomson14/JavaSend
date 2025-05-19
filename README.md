@@ -40,7 +40,7 @@ This app is designed to be completely self contained. The log and settings files
 ### Easy Upload Form
 - The front end of this app is a simple web html form that accepts almost any file you can throw at it from any mobile device with a qr code scanning camera.
 
-![QR Code ready](UploadForm.png)
+![QR Code ready](UploadForm.jpeg)
 
 ### Customizable Settings
 - JavaSend allows adjusting the port number and download path easily.
