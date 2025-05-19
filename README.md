@@ -30,4 +30,21 @@
 
 This app is designed to be completely self contained. The log and settings files will save inside the main folder allowing for easy deletion with no stray files in AppData. This also means that any folder requiring admin priveledges for read/write (such as Program Files) is not the best place to keep this app. Instead, make a folder called "Apps" on your desktop and place the unzipped application in there.
 
+## 📷 Demo Images
+
+### QR Code Ready
+- Automatically creates a QR code from your IP address and port number, making file upload from a mobile device a walk in the park.
+
+![QR Code ready](ScanPage.png)
+
+### Customizable Settings
+- JavaSend allows adjusting the port number and download path easily.
+
+![Customize Settings](Settings.png)
+
+### Built in Logging System
+- JavaSend includes a simple logging system for tracking where files are saved to, server starting and stopping, settings changes, and more.
+
+![Logging System](Logs.png)
+
 
