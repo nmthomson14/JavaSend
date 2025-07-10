@@ -1,6 +1,7 @@
 package javasend;
 
 import java.io.*;
+import java.nio.file.Path;
 
 public class SettingsHandler {
 
@@ -13,13 +14,14 @@ public class SettingsHandler {
     // Objects
     private Settings currentSettings;
 
-    public SettingsHandler() {
+    public Path getTempUploadsPath() { return settingsFileHandler.getTempUploadsPath(); }
+    public void clearTempUploadFiles() { settingsFileHandler.clearTempFiles(); }
 
+    public SettingsHandler() {
         this.settingsFileHandler = new FileHandler(SETTINGS_FILE_NAME);
     }
 
     public Settings getSettings() {
-
         if (currentSettings == null) {
             currentSettings = loadSettings();
         }
@@ -28,7 +30,6 @@ public class SettingsHandler {
     }
 
     private Settings loadSettings() {
-
         File settingsFile = settingsFileHandler.getFile();
 
         if (!settingsFile.exists()) {
@@ -47,26 +48,23 @@ public class SettingsHandler {
         }
     }
 
-    public void updateSettings(int port, String downloadPath) {
-
+    public void updateSettings(int port, String downloadPath, String ipAddress) {
         currentSettings.setPort(port);
         currentSettings.setDownloadPath(downloadPath);
+        currentSettings.setIpAddress(ipAddress);
         saveSettings();
     }
 
     public void resetSettings() {
-
         currentSettings = createDefaultSettings();
         deleteSettings();
     }
 
     private void saveSettings() {
-
         settingsFileHandler.overwriteFile(currentSettings);
     }
 
     private void deleteSettings() {
-
         settingsFileHandler.deleteFile();
     }
 

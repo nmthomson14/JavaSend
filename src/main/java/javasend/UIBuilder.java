@@ -3,7 +3,12 @@ package javasend;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public class UIBuilder implements MessageReceiver {
 
@@ -18,6 +23,10 @@ public class UIBuilder implements MessageReceiver {
     private JPanel stackedPanel;
     private JTextField portInput;
     private JTextField downloadPathField;
+    private JTextField ipAddressField;
+    private JPanel serverPanel;
+    private JLabel serverLabel;
+    private JLabel qrLabel;
 
     // Handlers
     private final ServerHandler server;
@@ -40,7 +49,6 @@ public class UIBuilder implements MessageReceiver {
     }
 
     private void buildMainMenu() {
-
         // Define JComponents
         systemOutput = new JTextArea(10, 20);
         cardLayout = new CardLayout();
@@ -85,6 +93,7 @@ public class UIBuilder implements MessageReceiver {
         // Handle main frame
         mainFrame.setSize(UI_WIDTH, UI_HEIGHT);
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        mainFrame.setLocationRelativeTo(null);
         mainFrame.add(topPanel, BorderLayout.NORTH);
         mainFrame.add(stackedPanel, BorderLayout.CENTER);
         mainFrame.add(bottomPanel, BorderLayout.SOUTH);
@@ -101,7 +110,6 @@ public class UIBuilder implements MessageReceiver {
     }
 
     private void buildMainTab() {
-
         // JComponents
         JPanel panel = new JPanel();
         JButton startServerButton = new JButton("Start Server");
@@ -114,7 +122,9 @@ public class UIBuilder implements MessageReceiver {
         panel.add(Box.createVerticalStrut(10)); // spacer
 
         // Handle button listeners
-        startServerButton.addActionListener(e -> handleStartServer(String.valueOf(settingsHandler.getSettings().getPort())));
+        startServerButton.addActionListener(e -> handleStartServer(
+                String.valueOf(settingsHandler.getSettings().getPort()),
+                String.valueOf(settingsHandler.getSettings().getIpAddress())));
         settingsButton.addActionListener(e -> handleLoadSettingsTab());
         loggerButton.addActionListener(e -> cardLayout.show(stackedPanel, "LOGGER"));
         helpButton.addActionListener(e -> cardLayout.show(stackedPanel, "HELP"));
@@ -130,12 +140,13 @@ public class UIBuilder implements MessageReceiver {
     }
 
     private void buildSettingsTab() {
-
         // Define JComponents
         portInput = new JTextField(5);
         downloadPathField = new JTextField(20);
+        ipAddressField = new JTextField(20);
         JPanel panel = new JPanel();
         JLabel portLabel = new JLabel("(Advanced) Enter Port Number: ");
+        JLabel ipAddressLabel = new JLabel("(Advanced) Manually override IP Address: ");
         JLabel downloadPathLabel = new JLabel("Download Files Here:");
         JButton browseButton = new JButton("Change Folder");
         JButton saveButton = new JButton("Save");
@@ -154,6 +165,10 @@ public class UIBuilder implements MessageReceiver {
         // Handle downloadPath defaults
         downloadPathField.setEditable(false);
         downloadPathField.setMaximumSize(new Dimension(300, 25));
+
+        // Handle ipAddressField defaults
+        ipAddressField.setEditable(true);
+        ipAddressField.setMaximumSize(new Dimension(300, 25));
 
         // Handle button listeners
         browseButton.addActionListener(e ->
@@ -177,6 +192,8 @@ public class UIBuilder implements MessageReceiver {
         addComponent(saveButton, panel, 10);
         addComponent(cancelButton, panel, 10);
         addComponent(resetSettings, panel, 10);
+        addComponent(ipAddressLabel, panel, 10);
+        addComponent(ipAddressField, panel, 10);
         addComponent(portLabel, panel, 10);
         addComponent(portInput, panel, 10);
 
@@ -188,7 +205,6 @@ public class UIBuilder implements MessageReceiver {
     }
 
     private void buildHelpTab() {
-
         // Define JComponents
         JPanel panel = new JPanel();
         JTextArea helpText = new JTextArea(10, 40);
@@ -211,11 +227,23 @@ public class UIBuilder implements MessageReceiver {
                 QUICK START GUIDE:\s
                 Before starting, you may want to change the download location\s
                 where your files will be saved to. To do that, look at HOW TO\s
-                ADJUST DOWNLOAD LOCATION below. Now, to get started,\s
+                ADJUST DOWNLOAD LOCATION below. It is also very important to\s
+                confirm that the auto retrieved ip address in settings is\s
+                correct. To do that, please refer to the section OVERRIDE\s
+                IP ADDRESS below. Now, to get started,\s
                 simply press the Start Server button in the main menu, and\s
                 scan the QR code that pops up (or type in the URL below it)\s
                 with your mobile device. This will take you to a web page\s
                 form where you can choose almost any file to upload.\s
+                
+                HOW TO OVERRIDE IP ADDRESS:\s
+                This program automatically retrieves your IP address from the\s
+                local host. However, this can sometimes produce the wrong IP.\s
+                If this happens, you can override the IP address. On windows,\s
+                open the command prompt and type in "ipconfig". Search for an\s
+                IPv4 address and copy it. Paste it into the IP address field.\s
+                If there are multiple IPv4 addresses, try each one. If the scanned\s
+                webpage doesn't load, that means the wrong IPv4 address was used.\s
                 
                 LOST A FILE?\s
                 If you don't remember where a file was saved to, check the\s
@@ -252,7 +280,6 @@ public class UIBuilder implements MessageReceiver {
     }
 
     private void buildLoggerTab() {
-
         // Define JComponents
         JPanel panel = new JPanel();
         JButton loadLogFile = new JButton("Open Log File");
@@ -278,48 +305,69 @@ public class UIBuilder implements MessageReceiver {
     }
 
     private void buildServerTab() {
+        if (serverPanel == null) {
+            serverPanel = new JPanel();
+            serverPanel.setLayout(new BoxLayout(serverPanel, BoxLayout.Y_AXIS));
+            serverPanel.add(Box.createVerticalStrut(10)); // spacer
 
-        // Get IP address
-        String url = server.getHostAddress();
+            JLabel scanMeLabel = new JLabel("Scan Me!");
+            qrLabel = new JLabel();  // Will update image later
+            serverLabel = new JLabel();
 
-        // Define JComponents
-        JPanel panel = new JPanel();
-        JLabel scanMeLabel = new JLabel("Scan Me!");
-        JLabel serverLabel = new JLabel("URL: " + url);
-        JLabel qrLabel;
-        JButton closeServerButton = new JButton("Close Server");
+            JButton uploadFileButton = new JButton("Upload Files");
+            JButton closeServerButton = new JButton("Close Server");
 
-        // Set panel defaults
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(Box.createVerticalStrut(10)); // spacer
+            // Button handlers (same as before)
+            closeServerButton.addActionListener(e -> handleCloseServer());
+            uploadFileButton.addActionListener(e -> {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setMultiSelectionEnabled(true);
+                int result = fileChooser.showOpenDialog(null);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File[] files = fileChooser.getSelectedFiles();
+                    Path tempUploadsPath = settingsHandler.getTempUploadsPath();
 
-        // Handle Qr code generation
-        BufferedImage qrImage = QRCodeGenerator.generateQRCodeImage(url, 200, 200);
+                    for (File file : files) {
+                        try {
+                            Path target = tempUploadsPath.resolve(file.getName());
+                            Files.copy(file.toPath(), target, StandardCopyOption.REPLACE_EXISTING);
+                            SystemMessageHandler.sendMessages("Uploaded " + file.getName() + " to TempUploads.");
+                        } catch (IOException ex) {
+                            SystemMessageHandler.sendMessages("Failed to upload " + file.getName() + ": " + ex.getMessage());
+                        }
+                    }
+                }
+            });
 
-        if (qrImage != null) {
-            qrLabel = new JLabel(new ImageIcon(qrImage));
-        } else {
-            qrLabel = new JLabel("No QR code found");
+            // Add components
+            addComponent(scanMeLabel, serverPanel, 10);
+            addComponent(qrLabel, serverPanel, 10);
+            addComponent(serverLabel, serverPanel, 10);
+            addComponent(uploadFileButton, serverPanel, 10);
+            addComponent(closeServerButton, serverPanel, 10);
+
+            stackedPanel.add(serverPanel, "SERVER");
         }
 
-        // Button handlers
-        closeServerButton.addActionListener(e -> handleCloseServer());
+        String url = server.getHostAddress();
+        serverLabel.setText("URL: " + url);
 
-        // Add components to panel
-        addComponent(scanMeLabel, panel, 10);
-        addComponent(qrLabel, panel, 10);
-        addComponent(serverLabel, panel, 10);
-        addComponent(closeServerButton, panel, 10);
-
-        // add the panel to the stacked panes
-        stackedPanel.add(panel, "SECONDARY");
+        BufferedImage qrImage = QRCodeGenerator.generateQRCodeImage(url, 200, 200);
+        if (qrImage != null) {
+            qrLabel.setIcon(new ImageIcon(qrImage));
+            qrLabel.setText("");
+        } else {
+            qrLabel.setIcon(null);
+            qrLabel.setText("No QR code found");
+        }
     }
 
     // Method inherited from javasend.MessageReceiver interface
     @Override
     public void receiveMessage(String message) {
 
-        systemOutput.setText(message);
+        systemOutput.append(message + "\n");
+        systemOutput.setCaretPosition(systemOutput.getDocument().getLength());
     }
 
     // javasend.Settings handlers
@@ -331,15 +379,14 @@ public class UIBuilder implements MessageReceiver {
 
     private void handleSettingsSaved() {
 
-        int port = ServerHandler.verifyPort(portInput.getText());
+        int port = ServerHandler.verifyPort(portInput.getText().trim());
 
         // Failed port verification
-        if (port < 0)
-        {
+        if (port < 0) {
             return;
         }
 
-        settingsHandler.updateSettings(port, downloadPathField.getText());
+        settingsHandler.updateSettings(port, downloadPathField.getText(), ipAddressField.getText().trim());
         cardLayout.show(stackedPanel, "MAIN");
     }
 
@@ -353,6 +400,13 @@ public class UIBuilder implements MessageReceiver {
     private void loadSettingsFields() {
 
         // On settings reset, also update the values in the text fields to show the defaults
+        try {
+            ipAddressField.setText(settingsHandler.getSettings().getIpAddress());
+        } catch (Exception e) {
+            SystemMessageHandler.sendMessages("Could not get IP address.");
+            ipAddressField.setText("Could not get IP address.");
+        }
+
         portInput.setText(String.valueOf(settingsHandler.getSettings().getPort()));
         downloadPathField.setText(settingsHandler.getSettings().getDownloadPath());
     }
@@ -370,16 +424,16 @@ public class UIBuilder implements MessageReceiver {
     }
 
     // Server handlers
-    private void handleStartServer(String portInput) {
+    private void handleStartServer(String portInput, String ipAddress) {
 
         // Attempt to initialize Server
-        boolean successfulStart = server.InitializeServer(portInput);
+        boolean successfulStart = server.InitializeServer(portInput, ipAddress);
 
         // If successful, then switch to the secondary pane
         if (successfulStart)
         {
             buildServerTab();
-            cardLayout.show(stackedPanel, "SECONDARY");
+            cardLayout.show(stackedPanel, "SERVER");
         }
     }
 

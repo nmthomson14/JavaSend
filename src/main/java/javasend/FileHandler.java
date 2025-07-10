@@ -3,6 +3,7 @@ package javasend;
 import java.awt.*;
 import java.io.*;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 
 public class FileHandler {
 
@@ -19,9 +20,17 @@ public class FileHandler {
 
     // Getters
     public File getFile() { return file; }
+    public Path getTempUploadsPath() {
+        File tempUploads = new File(defineDirectory(), "TempUploads");
+
+        if (!tempUploads.exists()) {
+            tempUploads.mkdirs();  // create folder if it doesn't exist
+        }
+
+        return tempUploads.toPath();
+    }
 
     private File defineDirectory() {
-
         try {
             return new File(SettingsHandler.class
                     .getProtectionDomain()
@@ -37,7 +46,6 @@ public class FileHandler {
     }
 
     public void overwriteFile(Object object) {
-
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
             out.writeObject(object);
             SystemMessageHandler.sendMessages(fileName + " saved successfully.");
@@ -47,7 +55,6 @@ public class FileHandler {
     }
 
     public void openFile() {
-
         try {
 
             if (!file.exists()) {
@@ -67,7 +74,6 @@ public class FileHandler {
     }
 
     public void appendText(String logMessage) {
-
         try (FileWriter fw = new FileWriter(file, true);
              BufferedWriter bw = new BufferedWriter(fw);
              PrintWriter out = new PrintWriter(bw)) {
@@ -78,7 +84,6 @@ public class FileHandler {
     }
 
     public void deleteFile() {
-
         if (file.exists()) {
 
             if (file.delete()) {
@@ -89,6 +94,29 @@ public class FileHandler {
 
         } else {
             SystemMessageHandler.sendMessages(fileName + " was not found and could not be reset.");
+        }
+    }
+
+    public void clearTempFiles() {
+        Path tempUploadsPath = getTempUploadsPath();
+        File tempFolder = tempUploadsPath.toFile();
+
+        if (tempFolder.exists() && tempFolder.isDirectory()) {
+            File[] files = tempFolder.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile()) {
+                        try {
+                            if (!f.delete()) {
+                                SystemMessageHandler.sendMessages("Failed to delete temp file: " + f.getName());
+                            }
+                        } catch (SecurityException se) {
+                            SystemMessageHandler.sendMessages("Security exception deleting temp file: " + f.getName());
+                        }
+                    }
+                }
+                SystemMessageHandler.sendMessages("TempUploads folder cleared on shutdown.");
+            }
         }
     }
 }

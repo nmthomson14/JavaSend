@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Available Downloads</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            max-width: 500px;
+            margin: auto;
+        }
+
+        li {
+            background: #fff;
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        a {
+            text-decoration: none;
+            color: #007BFF;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<h1>Available Downloads</h1>
+<ul id="fileList">Loading...</ul>
+
+<script>
+    fetch('/api/uploads')
+        .then(res => res.json())
+        .then(files => {
+            const list = document.getElementById('fileList');
+            list.innerHTML = '';
+            files.forEach(file => {
+                const li = document.createElement('li');
+                const link = document.createElement('a');
+                link.href = `/uploads/${encodeURIComponent(file)}`;
+                link.textContent = file;
+                link.download = file;
+                li.appendChild(link);
+                list.appendChild(li);
+            });
+        })
+        .catch(err => {
+            document.getElementById('fileList').textContent = 'Failed to load files.';
+            console.error(err);
+        });
+</script>
+</body>
+</html>

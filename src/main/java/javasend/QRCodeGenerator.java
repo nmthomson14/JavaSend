@@ -9,7 +9,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class QRCodeGenerator {
-
     // Pass in text to encode, returns a QR code at size specified as BuffedImage
     public static BufferedImage generateQRCodeImage(String textToEncode, int width, int height) {
 

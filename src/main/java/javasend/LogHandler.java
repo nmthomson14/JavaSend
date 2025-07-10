@@ -22,20 +22,17 @@ public class LogHandler implements MessageReceiver {
     // Method from javasend.MessageReceiver interface
     @Override
     public void receiveMessage(String message) {
-
         String timestamp = timestampFormat.format(new Date());
-        String timeStampedMessaged = "[" + timestamp + "] " + message;
+        String timeStampedMessage = "[" + timestamp + "] " + message;
 
-        logFileHandler.appendText(timeStampedMessaged);
+        logFileHandler.appendText(timeStampedMessage);
     }
 
     public void openLogFile() {
-
         logFileHandler.openFile();
     }
 
     public void deleteLogFile() {
-
         logFileHandler.deleteFile();
     }
 }

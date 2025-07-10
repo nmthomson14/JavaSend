@@ -22,33 +22,105 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         input[type="file"] {
             margin: 10px 0;
         }
 
-        input[type="submit"] {
+        input[type="submit"],
+        button {
             padding: 10px 20px;
-            background-color: #007BFF;
             border: none;
             color: white;
             border-radius: 5px;
             cursor: pointer;
+            margin: 5px;
+        }
+
+        input[type="submit"] {
+            background-color: #007BFF;
         }
 
         input[type="submit"]:hover {
             background-color: #0056b3;
         }
+
+        .clear-btn {
+            background-color: #dc3545;
+        }
+
+        .clear-btn:hover {
+            background-color: #c82333;
+        }
+
+        .nav-btn {
+            background-color: #007BFF;
+        }
+
+        .nav-btn:hover {
+            background-color: #0056b3;
+        }
+
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 5px 0;
+        }
     </style>
 </head>
+
 <body>
 <img src="/assets/logo.png" alt="JavaSend Logo" style="width: 150px; margin-bottom: 20px;" />
 <h1>Upload Your File</h1>
+
 <form method="POST" action="/upload" enctype="multipart/form-data">
-    <input type="file" name="file" required />
-    <br />
-    <input type="submit" value="Upload" />
+    <input type="file" id="fileInput" name="file" multiple required />
+    <ul id="fileList"></ul>
+    <input type="submit" value="Submit" />
+    <button type="button" class="clear-btn" onclick="clearFiles()">Clear</button>
 </form>
+
+<button class="nav-btn" onclick="window.location.href='/uploads.html'">Uploads From Computer</button>
+
+<script>
+    const fileInput = document.getElementById("fileInput");
+    const fileList = document.getElementById("fileList");
+    let selectedFiles = [];
+
+    fileInput.addEventListener("change", (e) => {
+        selectedFiles = Array.from(e.target.files);
+        renderFileList();
+    });
+
+    function renderFileList() {
+        fileList.innerHTML = "";
+        selectedFiles.forEach((file) => {
+            const li = document.createElement("li");
+            li.textContent = file.name;
+            fileList.appendChild(li);
+        });
+    }
+
+    function updateInputFiles() {
+        const dataTransfer = new DataTransfer();
+        selectedFiles.forEach(file => dataTransfer.items.add(file));
+        fileInput.files = dataTransfer.files;
+    }
+
+    function clearFiles() {
+        selectedFiles = [];
+        fileInput.value = "";
+        updateInputFiles();
+        renderFileList();
+    }
+</script>
 </body>
 </html>

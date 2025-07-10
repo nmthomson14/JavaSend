@@ -3,7 +3,6 @@ package javasend;
 public class Main {
 
     public static void main(String[] args) {
-
         // Initialize class handlers
         LogHandler logHandler = new LogHandler();
         SettingsHandler settingsHandler = new SettingsHandler();
@@ -15,6 +14,8 @@ public class Main {
         // Initialize all message receivers
         SystemMessageHandler.initializeInstance(
                 new MessageReceiver[] { ui, logHandler } );
+
+        Runtime.getRuntime().addShutdownHook(new Thread(settingsHandler::clearTempUploadFiles));
 
     }
 }
